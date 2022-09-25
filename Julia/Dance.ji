@@ -1,0 +1,30 @@
+using Dance
+
+
+
+function valid_host() :: Bool
+    allowed_hosts::Array{String, 1} = [Main.Settings[:server_host]]
+    valid_forwarded_host::Bool = false
+    valid_host::Bool = false
+
+    if "127.0.0.1" in allowed_hosts
+        push!(allowed_hosts, "localhost")
+    end
+
+    if !(Main.Settings[:server_port] in [80, 443])
+        for (idx, item) in enumerate(allowed_hosts)
+            allowed_hosts[idx] = item * ":" * string(Main.Settings[:server_port])
+        end
+    end
+
+    for pair in request_headers
+        if pair.first=="Host"
+           valid_host = pair.second in allowed_hosts
+        end
+        if pair.first=="X-Forwarded-Host"
+           valid_forwarded_host = pair.second in allowed_hosts
+        end
+    end
+
+    return valid_host && valid_forwarded_host
+end
